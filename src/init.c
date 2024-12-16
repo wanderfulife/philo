@@ -6,7 +6,7 @@
 /*   By: JoWander <jowander@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 09:03:45 by JoWander          #+#    #+#             */
-/*   Updated: 2024/12/16 09:03:47 by JoWander         ###   ########.fr       */
+/*   Updated: 2024/12/16 09:52:31 by JoWander         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,79 +35,79 @@ static int	ft_atoi(const char *str)
 	return (sign * result);
 }
 
-static bool	parse_arguments(t_program *prog, int argc, char **argv)
+static bool	parse_arguments(t_sim *prog, int argc, char **argv)
 {
 	int	i;
 
 	i = 1;
 	while (i < argc)
 	{
-		if (!is_valid_positive_int(argv[i]))
+		if (!is_valid_num(argv[i]))
 			return (false);
 		i++;
 	}
-	prog->philo_count = ft_atoi(argv[1]);
-	prog->time_to_die = ft_atoi(argv[2]);
-	prog->time_to_eat = ft_atoi(argv[3]);
-	prog->time_to_sleep = ft_atoi(argv[4]);
-	prog->must_eat_count = -1;
+	prog->num_philos = ft_atoi(argv[1]);
+	prog->die_ms = ft_atoi(argv[2]);
+	prog->eat_ms = ft_atoi(argv[3]);
+	prog->sleep_ms = ft_atoi(argv[4]);
+	prog->meals_limit = -1;
 	if (argc == 6)
-		prog->must_eat_count = ft_atoi(argv[5]);
-	if (prog->philo_count <= 0 || prog->time_to_die <= 0
-		|| prog->time_to_eat <= 0 || prog->time_to_sleep <= 0)
+		prog->meals_limit = ft_atoi(argv[5]);
+	if (prog->num_philos <= 0 || prog->die_ms <= 0
+		|| prog->eat_ms <= 0 || prog->sleep_ms <= 0)
 		return (false);
-	if (argc == 6 && prog->must_eat_count <= 0)
+	if (argc == 6 && prog->meals_limit <= 0)
 		return (false);
 	return (true);
 }
 
-static bool	init_mutexes(t_program *program)
+static bool	init_mutexes(t_sim *program)
 {
 	int	i;
 
-	program->forks = malloc(sizeof(pthread_mutex_t) * program->philo_count);
+	program->forks = malloc(sizeof(pthread_mutex_t) * program->num_philos);
 	if (!program->forks)
 		return (false);
 	i = 0;
-	while (i < program->philo_count)
+	while (i < program->num_philos)
 	{
 		if (pthread_mutex_init(&program->forks[i], NULL) != 0)
 			return (false);
 		i++;
 	}
-	if (pthread_mutex_init(&program->death_mutex, NULL) != 0)
+	if (pthread_mutex_init(&program->death_lock, NULL) != 0)
 		return (false);
-	if (pthread_mutex_init(&program->print_mutex, NULL) != 0)
+	if (pthread_mutex_init(&program->print_lock, NULL) != 0)
 		return (false);
 	return (true);
 }
 
-static bool	init_philosophers(t_program *program)
+static bool	init_philosophers(t_sim *program)
 {
 	int	i;
 
-	program->philos = malloc(sizeof(t_philo) * program->philo_count);
+	program->philos = malloc(sizeof(t_philo) * program->num_philos);
 	if (!program->philos)
 		return (false);
 	i = 0;
-	while (i < program->philo_count)
+	while (i < program->num_philos)
 	{
 		program->philos[i].id = i + 1;
-		program->philos[i].meals_eaten = 0;
-		program->philos[i].last_meal_time = get_time();
+		program->philos[i].meals_count = 0;
+		program->philos[i].last_meal_ms = get_time();
 		program->philos[i].prog = program;
-		program->philos[i].left_fork = &program->forks[i];
-		program->philos[i].right_fork = &program->forks[(i + 1)
-			% program->philo_count];
+		program->philos[i].l_fork = &program->forks[i];
+		program->philos[i].r_fork = &program->forks[(i + 1)
+			% program->num_philos];
 		i++;
 	}
 	return (true);
 }
 
-bool	init_program(t_program *prog, int argc, char **argv)
+bool	init(t_sim *prog, int argc, char **argv)
 {
-	prog->someone_died = false;
-	prog->start_time = get_time();
+	prog->has_death = false;
+	prog->start_ms = get_time();
 	if (!parse_arguments(prog, argc, argv))
 		return (false);
 	if (!init_mutexes(prog))

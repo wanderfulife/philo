@@ -6,35 +6,35 @@
 /*   By: JoWander <jowander@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 09:03:50 by JoWander          #+#    #+#             */
-/*   Updated: 2024/12/16 09:03:51 by JoWander         ###   ########.fr       */
+/*   Updated: 2024/12/16 09:49:54 by JoWander         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philosophers.h"
 
-static void	cleanup_program(t_program *prog)
+static void	cleanup_program(t_sim *prog)
 {
 	int	i;
 
 	if (prog->forks)
 	{
 		i = 0;
-		while (i < prog->philo_count)
+		while (i < prog->num_philos)
 		{
 			pthread_mutex_destroy(&prog->forks[i]);
 			i++;
 		}
 		free(prog->forks);
 	}
-	pthread_mutex_destroy(&prog->death_mutex);
-	pthread_mutex_destroy(&prog->print_mutex);
+	pthread_mutex_destroy(&prog->death_lock);
+	pthread_mutex_destroy(&prog->print_lock);
 	if (prog->philos)
 		free(prog->philos);
 }
 
 int	main(int argc, char **argv)
 {
-	t_program	prog;
+	t_sim	prog;
 
 	if (argc != 5 && argc != 6)
 	{
@@ -43,14 +43,14 @@ int	main(int argc, char **argv)
 	}
 	prog.forks = NULL;
 	prog.philos = NULL;
-	prog.philo_count = 0;
-	if (!init_program(&prog, argc, argv))
+	prog.num_philos = 0;
+	if (!init(&prog, argc, argv))
 	{
 		printf("Error: Initialization failed\n");
 		cleanup_program(&prog);
 		return (1);
 	}
-	if (!start_simulation(&prog))
+	if (!start(&prog))
 	{
 		cleanup_program(&prog);
 		printf("Error: Simulation failed\n");

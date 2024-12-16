@@ -6,52 +6,52 @@
 /*   By: JoWander <jowander@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/16 09:03:54 by JoWander          #+#    #+#             */
-/*   Updated: 2024/12/16 09:03:56 by JoWander         ###   ########.fr       */
+/*   Updated: 2024/12/16 09:52:31 by JoWander         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/philosophers.h"
 
-bool	philosopher_eat(t_philo *philo)
+bool	philo_eat(t_philo *philo)
 {
 	pthread_mutex_t	*first;
 	pthread_mutex_t	*second;
 
-	if (is_simulation_over(philo->prog))
+	if (it_sim_done(philo->prog))
 		return (false);
 	if (philo->id % 2 == 0)
 	{
-		first = philo->right_fork;
-		second = philo->left_fork;
+		first = philo->r_fork;
+		second = philo->l_fork;
 	}
 	else
 	{
-		first = philo->left_fork;
-		second = philo->right_fork;
+		first = philo->l_fork;
+		second = philo->r_fork;
 	}
-	(pthread_mutex_lock(first), print_status(philo, "has taken a fork"));
-	(pthread_mutex_lock(second), print_status(philo, "has taken a fork"));
-	print_status(philo, "is eating");
-	pthread_mutex_lock(&philo->prog->death_mutex);
-	philo->last_meal_time = get_time();
-	philo->meals_eaten++;
-	pthread_mutex_unlock(&philo->prog->death_mutex);
-	smart_sleep(philo->prog->time_to_eat);
+	(pthread_mutex_lock(first), log_status(philo, "has taken a fork"));
+	(pthread_mutex_lock(second), log_status(philo, "has taken a fork"));
+	log_status(philo, "is eating");
+	pthread_mutex_lock(&philo->prog->death_lock);
+	philo->last_meal_ms = get_time();
+	philo->meals_count++;
+	pthread_mutex_unlock(&philo->prog->death_lock);
+	msleep(philo->prog->eat_ms);
 	(pthread_mutex_unlock(second), pthread_mutex_unlock(first));
 	return (true);
 }
 
-void	philosopher_sleep(t_philo *philo)
+void	philo_sleep(t_philo *philo)
 {
-	if (!is_simulation_over(philo->prog))
+	if (!it_sim_done(philo->prog))
 	{
-		print_status(philo, "is sleeping");
-		smart_sleep(philo->prog->time_to_sleep);
+		log_status(philo, "is sleeping");
+		msleep(philo->prog->sleep_ms);
 	}
 }
 
-void	philosopher_think(t_philo *philo)
+void	philo_think(t_philo *philo)
 {
-	if (!is_simulation_over(philo->prog))
-		print_status(philo, "is thinking");
+	if (!it_sim_done(philo->prog))
+		log_status(philo, "is thinking");
 }
